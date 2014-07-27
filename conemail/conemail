@@ -1,0 +1,20 @@
+#!/bin/sh
+
+NAME="cone"
+CONE_BIN=`which "$NAME"`
+
+export UNDERLINE_HACK=0
+export TLS_STARTTLS_PROTOCOL=TLS1
+export TLS_KX_LIST=ALL
+export TLS_COMPRESSION=ALL
+export TLS_CERTS=X509
+export TLS_TRUSTCERTS=/etc/ssl/certs
+export TLS_VERIFYPEER=NONE
+export TLS_CACHEFILE=$HOME/.cache/ssl
+export TLS_CACHESIZE=524288
+
+if test -z "$XDG_CONFIG_HOME"; then
+    XDG_CONFIG_HOME="$HOME/.config"
+fi
+
+exec "$CONE_BIN" -c "$XDG_CONFIG_HOME/$NAME" "$@"
