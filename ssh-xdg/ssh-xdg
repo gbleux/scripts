@@ -1,0 +1,28 @@
+#!/bin/sh
+#
+# XDG complience wrapper. injects a parameter into the command
+# pointing to the configuration location suggested by the XDG
+# specification. this wrapper was tested with the SSH tools,
+# as the injected parameter is in the form of '-F PATH'. other
+# commands accepting the same argument might work as well, as
+# long as they are locateable via PATH.
+#
+
+REAL_BIN="`basename $0 | sed -e 's/-xdg//'`"
+REAL_EXE="`which $REAL_BIN 2>/dev/null`"
+XDG_SHAREDCFG="$HOME/.config/ssh/config"
+XDG_CFG="$HOME/.config/$REAL_BIN/config"
+
+if test -z "$REAL_EXE";then
+    echo "$REAL_EXE is not in the PATH"
+    exit 1
+elif test -r "$XDG_CFG";then
+    exec "$REAL_EXE" -F "$XDG_CFG" "$@"
+elif test -r "$XDG_SHAREDCFG";then
+    exec "$REAL_EXE" -F "$XDG_SHAREDCFG" "$@"
+else
+    # why use this wrapper then?
+    exec "$REAL_EXE"
+fi
+
+exit $?
