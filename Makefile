@@ -23,32 +23,32 @@ $(DIRS): $(BUILDDIRS)
 
 build: $(BUILDDIRS)
 $(BUILDDIRS):
-	$(MAKE) -C $(@:build-%=%)
+	@$(MAKE) -C $(@:build-%=%)
 
 install: $(INSTALLDIRS) build
 $(INSTALLDIRS):
-	$(MAKE) -C $(@:install-%=%) install
+	@$(MAKE) -C $(@:install-%=%) install
 
 # underscore instead of hyphen to prevent target collisions.
 install_home: $(HOMINGDIRS) build
 $(HOMINGDIRS):
-	$(MAKE) -C $(@:install_home-%=%) install_home
+	@$(MAKE) -C $(@:install_home-%=%) install_home
 
 uninstall: $(UNINSTALLDIRS)
 $(UNINSTALLDIRS):
-	$(MAKE) -C $(@:uninstall-%=%) uninstall
+	@$(MAKE) -C $(@:uninstall-%=%) uninstall
 
 uninstall_home: $(EVICTDIRS)
 $(EVICTDIRS):
-	$(MAKE) -C $(@:uninstall_home-%=%) uninstall_home
+	@$(MAKE) -C $(@:uninstall_home-%=%) uninstall_home
 
 test: $(TESTDIRS) build
 $(TESTDIRS): 
-	$(MAKE) -C $(@:test-%=%) test
+	@$(MAKE) -C $(@:test-%=%) test
 
 clean: $(CLEANDIRS)
 $(CLEANDIRS): 
-	$(MAKE) -C $(@:clean-%=%) clean
+	@$(MAKE) -C $(@:clean-%=%) clean
 
 help:
 	@echo "This is the parent Makefile to operate on all projects"
