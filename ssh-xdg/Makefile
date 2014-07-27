@@ -44,11 +44,11 @@ $(HOMELINKFILES): $(HOMINGFILES)
 
 uninstall: $(UNINSTALLFILES)
 $(UNINSTALLFILES):
-	$(RM) $(DESTDIR)$(bindir)/$@
+	$(RM) $(DESTDIR)$(bindir)/$(@:uninstall-%=%)
 
 uninstall_home: $(EVICTFILES)
 $(EVICTFILES):
-	$(RM) $(homebindir)/$@
+	$(RM) $(homebindir)/$(@:uninstall_home-%=%)
 
 test: build
 
