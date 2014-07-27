@@ -17,6 +17,7 @@ if test -z "$REAL_EXE";then
     echo "$REAL_EXE is not in the PATH"
     exit 1
 elif test -r "$XDG_CFG";then
+	# per-tool configuration has priority
     exec "$REAL_EXE" -F "$XDG_CFG" "$@"
 elif test -r "$XDG_SHAREDCFG";then
     exec "$REAL_EXE" -F "$XDG_SHAREDCFG" "$@"
