@@ -1,0 +1,189 @@
+#!/bin/sh
+#
+# sesame is a wrapper around encfs to de-/encrypt containers
+# using a password manager. the mount point (SESAME_VAULT)
+# and encrypted container location (SESAME_GATE) can either be
+# specified via environment variables or on the commandline.
+# 
+# the command to execute for password retrieval has the be
+# defined as an environment variable named SESAME_KEY.
+#
+# the script requires an existing encrypted container. it does
+# not offer any functionality to create one.
+#
+
+#
+# open the sesame (decrypt the container)
+# @param $1 {string} encrypted container
+# @param $2 {string} mount point
+# @param $3 {string} command to execute for password-on-stdout
+#
+open() {
+    mkdir -p "$2" && \
+        exec $3 | encfs --stdinpass "$1" "$2"
+}
+
+#
+# encrypt/close/seal/unmount the container
+# @param $1 {string} mount point
+#
+close() {
+    fusermount -z -u "$1"
+}
+
+#
+# determine the mount point status. stdout is suppressed.
+# use $? to act accordingly.
+# @param $1 {string} mount point
+#
+status() {
+    grep /proc/mounts -e "$1" &>/dev/null
+}
+
+#
+# execute the command from $SHELL in the provided directory.
+# the shell will receive -i as parameter to indicate
+# interactive usage.
+# @param $1 {string} working directory
+# @return shell exit status or 1 if no shell has been defined
+# @see $SHELL
+#
+enter() {
+    if test -n "$SHELL"; then
+        cd "$1" && exec "$SHELL" -i
+
+        return $?
+    else
+        printf "unable to spawn a shell" 1>&2
+        return 1
+    fi
+}
+
+#
+# print the values of environment/configuration values used
+# as part of the script logic.
+# @see $SESAME_VAULT
+# @see $SESAME_GATE
+#
+print_env() {
+    if status "$SESAME_GATE";then
+        SESAME_STATUS="Open"
+    else
+        SESAME_STATUS="Closed"
+    fi
+
+    echo "Vault: $SESAME_VAULT"
+    echo "Gate: $SESAME_GATE ($SESAME_STATUS)"
+}
+
+#
+# print general help or information about a specific command.
+# @param $1 {string} the program path
+#                    (used for the general usage message)
+# @param $2 {string} optional command name to explain. if empty
+#                    or invalid, the command usage is shown
+# @see usage
+#
+print_help() {
+    case "$2" in
+        open)
+            echo "open the sesame"
+            ;;
+        close)
+            echo "close the sesame without any checks"
+            ;;
+        "safe-close")
+            echo "close the sesame if currently mounted"
+            ;;
+        status)
+            echo "print the mount state"
+            ;;
+        enter)
+            echo "spawn a shell with the sesame as working directory"
+            ;;
+        env)
+            echo "print the mount point and container location"
+            ;;
+        help)
+            echo "briefly explain a command or the script itself"
+            ;;
+        *)
+            usage "$1"
+            ;;
+    esac
+}
+
+#
+# print the command usage message.
+# @param $1 {string} the program name/path
+#
+usage() {
+    printf "usage: %s COMMAND [CONTAINER] [MOUNT]\n" "$1"
+    printf "commands: open,close,safe-close,status,help,enter,env\n"
+}
+
+# determine the encrypted container location
+# commandline directories have highest priority
+# over configuration values
+if test -d "$2";then
+    SESAME_VAULT="`readlink -fn "$2"`"
+elif test -n "$SESAME_VAULT";then
+    SESAME_VAULT="`readlink -fn "$SESAME_VAULT"`"
+else
+    echo "No encrypted contained specified" 1>&2
+    exit 1
+fi
+
+# read the mount point location
+if test -n "$3";then
+    SESAME_GATE="`readlink -mn "$3"`"
+elif test -n "$SESAME_GATE";then
+    SESAME_GATE="`readlink -mn "$SESAME_GATE"`"
+else
+    SESAME_GATE="$HOME/.cache/sesame"
+fi
+
+# password source command for decryption
+if test -z "$SESAME_KEY";then
+    echo "SESAME_KEY is not set" 1>&2
+    exit 1
+fi
+
+case "$1" in
+    open)
+        echo "Opening sesame '$SESAME_VAULT' at '$SESAME_GATE'"
+        open "$SESAME_VAULT" "$SESAME_GATE" "$SESAME_KEY" 
+        exit $?
+        ;;
+    close)
+        echo "Closing sesame: '$SESAME_GATE'"
+        close "$SESAME_GATE"
+        exit $?
+        ;;
+    enter)
+        echo "Entering sesame '$SESAME_GATE'"
+        enter "$SESAME_GATE"
+        exit $?
+        ;;
+    status)
+        status "$SESAME_GATE" && echo "Open" || echo "Closed"
+        exit $?
+        ;;
+    safe-close)
+        status "$SESAME_GATE" && close "$SESAME_GATE"
+        exit $?
+        ;;
+    env)
+        print_env
+        ;;
+    help)
+        print_help "$0" "$2"
+        ;;
+    *)
+        printf "'%s' is not a valid command\n" "$1" 1>&2
+        usage "$0" 1>&2
+        exit 1
+        ;;
+esac
+
+exit 0
