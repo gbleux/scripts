@@ -1,0 +1,68 @@
+#!/bin/sh
+#
+# run a shell using a different HOME directory than the one of the current user.
+# 
+# usage: 
+# shroot [OPTIONS] [-- ARGUMENTS]
+# 
+# options:
+# 	-s, --shell    	use the provided shell executable (default: /bin/sh)
+# 	-h, --home		set the HOME environment variable (default: $PWD)
+# 	--				stop processing the commandline. the remainder of the
+# 					commandline is passed to the invoked shell.
+#
+# examples:
+# 
+# run a login shell
+# 	shroot -- -l
+# 
+# use /tmp as the home directory
+# 	shroot -h /tmp
+# 
+# run an interactive c-shell with /run as the home directory
+# 	shroot --shell /bin/csh -h /run -- -i
+#
+
+SHELL=/bin/sh
+HOME="$PWD"
+
+while [ $# -gt 0 ]; do
+	case "$1" in
+		--shell|-s)
+			SHELL="$2"
+			shift
+			;;
+		--home|-h)
+			HOME="$2"
+			shift
+			;;
+		--)
+			shift
+			break
+			;;
+		*)
+			printf "Unknown option: %s\n" "$1" 1>&2
+			;;
+	esac
+
+	shift
+done
+
+if [ ! -x "$SHELL" ];then
+	printf "No such shell: %s\n" "$SHELL"
+	exit 1
+else
+    SHELL="`readlink -f $SHELL`"
+fi
+
+if [ ! -d "$HOME" ];then
+	printf "No such directory: %s\n" "$HOME"
+	exit 1
+else
+    # resolve absolute path
+    HOME="`readlink -f $HOME`"
+fi
+
+export SHELL
+export HOME
+exec $SHELL "$@"
