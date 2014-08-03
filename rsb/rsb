@@ -1,0 +1,52 @@
+#!/bin/sh
+#
+# another custom backup script.
+#
+
+if test $# -lt 1
+then
+    echo "No destination defined. Usage: $0 DEST [PWDFILE]" >&2
+    exit 1
+elif test $# -gt 2
+then
+    echo "Too many arguments. Usage: $0 DEST [PWDFILE]" >&2
+    exit 1
+fi
+
+RSYNC_ARGS="\
+    --human-readable \
+    --progress \
+    --recursive \
+    --hard-links \
+    --safe-links \
+    --links \
+    --perms \
+    --xattrs \
+    --times \
+    --group \
+    --owner \
+    --devices \
+    --specials \
+    --inplace \
+    --numeric-ids \
+    --delete \
+    --delete-excluded \
+    --exclude=".*" \
+    --exclude="tmp/" \
+    --exclude="var/" \
+    --exclude="mount/" \
+    --exclude="Desktop/""
+
+if test -n "$2"
+then
+    RSYNC_ARGS="--password-file=$2 $RSYNC_ARGS"
+fi
+
+rsync $RSYNC_ARGS $HOME/ $1/
+
+if test "$?" -eq 0
+then
+    echo "Backup completed: $1"
+else
+    echo "Backup failed: $1"
+fi
