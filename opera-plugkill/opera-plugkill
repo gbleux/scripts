@@ -1,0 +1,24 @@
+#!/bin/sh
+#
+# terminate any running opera plugin process.
+# (isn't this implemented by pkill already?)
+#
+
+KPIDS="$(ps -A -o pid,cmd | \
+        grep operaplugin | \
+        grep -v grep | \
+        awk '{ print $1 }')"
+
+if [ "x$KPIDS" == "x" ]
+then
+    echo "No process found."
+    exit 0
+fi
+
+for KPID in $KPIDS
+do
+    echo "Killing process '$KPID'"
+    kill -HUP "$KPID"
+done
+
+exit $?
