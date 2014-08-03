@@ -1,0 +1,27 @@
+#!/bin/bash
+#
+# helper script to adapt to the current screen setup.
+# the values are tailored to a specific setup. it probably requires
+# some modifications to work in other environments.
+#
+
+LAPTOP_SCREEN="LVDS-0"
+DVI_SCREEN="DVI-I-1"
+HDMI_SCREEN="HDMI-0"
+
+echo "Checking external monitors..."
+echo ""
+
+xrandr | grep "$DVI_SCREEN" | grep " connected "
+if [ $? -eq 0 ]; then
+    echo "Detected DVI, switching to home settings."
+    xrandr --output "$DVI_SCREEN" --left-of "$LAPTOP_SCREEN"
+fi
+
+xrandr | grep "$HDMI_SCREEN" | grep " connected "
+if [ $? -eq 0 ]; then
+    echo "Detected HDMI, switching to cinema settings."
+    xrandr --output "$HDMI_SCREEN" --mode 1920x1080
+    echo "Turning off laptop display"
+    xrandr --output "$LAPTOP_SCREEN" --off
+fi
