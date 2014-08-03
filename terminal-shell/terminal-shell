@@ -1,0 +1,16 @@
+#!/bin/sh
+#
+# run a command in a terminal emulator. the command is preferable a shell.
+#
+
+SHELL_BIN="$1"
+TERMINAL_APP=/usr/bin/xfce4-terminal
+TERMINAL_ARGV="--hide-menubar --execute $SHELL_BIN"
+
+if test $# -ne 1;then
+  echo "Invalid usage" >&2
+  exit 1
+fi
+
+#exec $TERMINAL_APP $TERMINAL_ARGV
+exo-open --launch TerminalEmulator $SHELL_BIN
