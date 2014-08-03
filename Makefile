@@ -67,4 +67,4 @@ help:
 .PHONY: subdirs $(CLEANDIRS)
 .PHONY: subdirs $(TESTDIRS)
 .PHONY: install install_home uninstall uninstall_home 
-.PHONY: all build clean test
+.PHONY: default all build clean test
