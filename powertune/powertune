@@ -1,0 +1,94 @@
+#!/bin/sh
+#
+# a variety of hand picked system modifications with the intend of
+# reducing the power consumption
+#
+
+_tune()
+{
+    echo $2 > $1
+}
+
+_wildcard()
+{
+    _PATTERN="$1"
+    _CALLBACK="$2"
+    _MATCHES="`find $_PATTERN 2>/dev/null`"
+
+    if test $? -gt 0
+    then
+      return 1
+    fi
+
+    shift 2
+
+    for MATCH in $MATCHES
+    do
+        $_CALLBACK "$MATCH" $@
+    done
+
+    return $?
+}
+
+
+# Power OFF nvidia card
+#echo '\_SB.PCI0.PEG0.PEGP._OFF' > /proc/acpi/call &
+
+# cpufreq ondemand
+_wildcard "/sys/devices/system/cpu/*/cpufreq/scaling_governor" "_tune" "ondemand"
+#for i in `find /sys/devices/system/cpu/*/cpufreq/scaling_governor`; do echo ondemand > $i; done;
+
+# Enable Audio HD powersave
+echo Y > /sys/module/snd_hda_intel/parameters/power_save_controller
+echo 30 > /sys/module/snd_hda_intel/parameters/power_save
+
+# SATA active link powermanagement
+_wildcard "/sys/class/scsi_host/host*/link_power_management_policy" "_tune" "min_power"
+#for i in `find /sys/class/scsi_host/host*/link_power_management_policy`; do echo min_power > $i; done;
+
+# Hdd sleep (60 * 5 = 300s)
+hdparm -S 60 /dev/sda
+# Hdd apm minimum (255 = off):
+hdparm -B 254 /dev/sda
+
+# Disable WOL
+ethtool -s eth0 wol d &
+
+# Wireless powersaving
+#iwconfig wlan0 power on
+iw dev wlan0 set power_save on
+
+# Enable multi core power savings
+#echo 1 > /sys/devices/system/cpu/sched_mc_power_savings
+#echo 1 > /sys/devices/system/cpu/sched_smt_power_savings
+
+# Enable laptop mode
+echo 5 > /proc/sys/vm/laptop_mode
+
+# Set vm writeback to 15 secs (lose 15 secs on crash)
+echo 1500 > /proc/sys/vm/dirty_writeback_centisecs
+
+# Disable NMI watchdog
+echo 0 > /proc/sys/kernel/nmi_watchdog
+
+# set pci slots to auto
+_wildcard "/sys/devices/*/power/control" "_tune" "auto"
+#for i in `find /sys/devices/*/power/control`; do echo auto > $i; done;
+
+# Device PM
+_wildcard "/sys/bus/i2c/devices/*/power/control" "_tune" "auto"
+_wildcard "/sys/bus/pci/devices/*/power/control" "_tune" "auto"
+#_wildcard "/sys/bus/spi/devices/*/power/control" "_tune" "auto"
+_wildcard "/sys/bus/usb/devices/*/power/control" "_tune" "auto"
+#for i in `find /sys/bus/i2c/devices/*/power/control`; do echo auto > $i; done;
+#for i in `find /sys/bus/pci/devices/*/power/control`; do echo auto > $i; done;
+#for i in `find /sys/bus/spi/devices/*/power/control`; do echo auto > $i; done;
+#for i in `find /sys/bus/usb/devices/*/power/control`; do echo auto > $i; done;
+
+# USB autosuspend
+#_wildcard "/sys/bus/usb/devices/*/power/level" "_tune" "auto"
+#_wildcard "/sys/bus/usb/devices/*/power/autosuspend" "_tune" "2"
+#for i in `find /sys/bus/usb/devices/*/power/level`; do echo auto > $i; done;
+#for i in `find /sys/bus/usb/devices/*/power/autosuspend`; do echo 2 > $i; done;
+
+echo "Powersavings activated"
