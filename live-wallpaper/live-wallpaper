@@ -1,0 +1,36 @@
+#!/bin/sh
+#
+# limit the number of conky instances to one. this script
+# must NOT have conky in its name, otherwise the script will
+# wrongly identify it as the running conky instance.
+#
+
+CONKY_DELAY=5
+
+conky_run(){
+    conky --config="$1" \
+        --daemonize \
+        --double-buffer \
+        --own-window \
+        --interval=10
+}
+
+# wait to see if someone else is starting conky
+# xinit, session restore, autostart, ...
+sleep $CONKY_DELAY
+
+if test -z "$XDG_CONFIG_HOME";then
+    XDG_CONKY="$HOME/.config/conky/rc"
+else
+    XDG_CONKY="$XDG_CONFIG_HOME/conky/rc"
+fi
+
+if pgrep conky >/dev/null;then
+    echo "A conky instance is already running"
+    exit 0
+else
+    echo "Launching conky"
+    conky_run "$XDG_CONKY"
+fi
+
+exit $?
